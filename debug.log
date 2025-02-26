@@ -1,0 +1,6 @@
+Sending to API: {"region_id":"1","country_id":"1","service_id":"1","call_type_id":"1","daily_usage":"15","business_days":"30","aht":"5.00"}
+API Response: {"message":"Calculation logic not found"}
+Sending to API: {"region_id":"1","country_id":"1","service_id":"1","call_type_id":"1","daily_usage":"15","business_days":"30","aht":"5.00"}
+API Response: {"error":"Server error while processing calculation"}
+Sending to API: {"region_id":"1","country_id":"1","service_id":"1","call_type_id":"1","daily_usage":"15","business_days":"30","aht":"5.00"}
+API Response: {"error":"Server error while processing calculation"}
