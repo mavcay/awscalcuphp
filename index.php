@@ -1,179 +1,176 @@
-<?php
-// Express.js API URL
-$api_url = "http://localhost:5000/api"; 
-
-// Fetch data from API
-$regionData = json_decode(file_get_contents("$api_url/regions"), true);
-$serviceData = json_decode(file_get_contents("$api_url/services"), true);
-$callTypeData = json_decode(file_get_contents("$api_url/call-types"), true);
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AWS Cost Calculation</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid black; padding: 8px; text-align: center; }
         th { background-color: #007BFF; color: white; }
         .total-cost { font-weight: bold; background-color: #f8f9fa; }
     </style>
 </head>
 <body>
-
     <h2>AWS Cost Calculation</h2>
 
     <form id="calculationForm">
-        <!-- AWS Region Selection -->
-        <label for="region">AWS Region:</label>
-        <select id="region" name="region_id">
-            <option value="">Select a region</option>
-            <?php foreach ($regionData as $row): ?>
-                <option value="<?= $row['region_id']; ?>"><?= $row['region_name']; ?></option>
-            <?php endforeach; ?>
-        </select>
+        <!-- Region Dropdown -->
+        <label for="region">Region:</label>
+<select id="region" name="region_id">
+    <option value="">Select Region</option>
+</select><br><br>
 
-        <!-- Country Selection -->
-        <label for="country">Country:</label>
-        <select id="country" name="country_id" disabled>
-            <option value="">Select a country</option>
-        </select>
+<label for="country">Country:</label>
+<select id="country" name="country_id">
+    <option value="">Select Country</option>
+</select><br><br>
 
-        <!-- Service Selection -->
+        <!-- Service Dropdown -->
         <label for="service">Service:</label>
         <select id="service" name="service_id">
-            <?php foreach ($serviceData as $row): ?>
-                <option value="<?= $row['service_id']; ?>"><?= $row['service_name']; ?></option>
-            <?php endforeach; ?>
-        </select>
+            <option value="">Select Service</option>
+        </select><br><br>
 
-        <!-- Call Type Selection -->
+        <!-- Call Type Dropdown -->
         <label for="call_type">Call Type:</label>
         <select id="call_type" name="call_type_id">
-            <?php foreach ($callTypeData as $row): ?>
-                <option value="<?= $row['call_type_id']; ?>"><?= $row['call_type_name']; ?></option>
-            <?php endforeach; ?>
-        </select>
+            <option value="">Select Call Type</option>
+        </select><br><br>
 
         <!-- User Inputs -->
         <label for="daily_usage">Daily Usage:</label>
-        <input type="number" id="daily_usage" name="daily_usage" value="15" required>
+        <input type="number" id="daily_usage" name="daily_usage" value="15" required><br><br>
 
         <label for="business_days">Business Days:</label>
-        <input type="number" id="business_days" name="business_days" value="30" required>
+        <input type="number" id="business_days" name="business_days" value="30" required><br><br>
 
         <label for="aht">AHT (Avg Handle Time in Minutes):</label>
-        <input type="number" step="0.01" id="aht" name="aht" value="5.00" required>
+        <input type="number" step="0.01" id="aht" name="aht" value="5.00" required><br><br>
 
         <button type="submit">Calculate</button>
     </form>
 
     <h3>Calculation Results</h3>
 
-    <table id="resultsTable">
+    <table id="resultsTable" style="display: none;">
         <thead>
             <tr>
-                <th></th>
-                <th>Country Code</th>
-                <th>Daily</th>
+                <th>Cost Type</th>
+                <th>Selected Country</th>
+                <th>Daily Usage</th>
                 <th>Business Days</th>
                 <th>Monthly Calls</th>
                 <th>AHT (mins)</th>
                 <th>Call Mins</th>
-                <th>Charges per Min.</th>
-                <th>Costs (In USD)</th>
+                <th>Cost</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
+            <!-- Rows for Voice Usage, DID, and Toll Free -->
+            <tr id="voice_usage_row">
                 <td>Cost (Voice Usage)</td>
-                <td id="country_code"></td>
+                <td id="country_name"></td>
                 <td id="daily_usage_value"></td>
                 <td id="business_days_value"></td>
                 <td id="monthly_calls"></td>
                 <td id="aht_value"></td>
                 <td id="call_minutes"></td>
-                <td id="voice_usage"></td>
                 <td id="cost_voice_usage"></td>
             </tr>
-            <tr>
+            <tr id="did_row">
                 <td>Cost (DID)</td>
-                <td colspan="6"></td>
-                <td id="DID_rate"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
                 <td id="cost_did"></td>
             </tr>
-            <tr>
-                <td>Cost (Toll-Free)</td>
-                <td colspan="6"></td>
-                <td id="toll_free_rate"></td>
+            <tr id="toll_free_row">
+                <td>Cost (Toll Free)</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
                 <td id="cost_toll_free"></td>
             </tr>
-            <tr class="total-cost">
+            <tr id="total_cost_row">
                 <td>Total Cost</td>
-                <td colspan="7"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
                 <td id="total_cost"></td>
             </tr>
         </tbody>
     </table>
+
     <script>
-    $(document).ready(function() {
-        // Load Countries when Region is selected
-        $('#region').change(function() {
-            let regionId = $(this).val();
-            if (regionId) {
-                $.post("fetch_data.php", { action: "get_countries", region_id: regionId }, function(data) {
-                    $('#country').html('<option value="">Select a country</option>');
-                    $.each(data, function(index, country) {
-                        $('#country').append(`<option value="${country.country_id}">${country.country_name}</option>`);
-                    });
-                    $('#country').prop('disabled', false);
-                }, "json");
-            }
+        $(document).ready(function () {
+            // Fetch regions on page load
+            $.post("fetch_data.php", { action: "get_regions" }, function (response) {
+                response.forEach(region => {
+                    $("#region").append(`<option value="${region.region_id}">${region.region_name}</option>`);
+                });
+            }, "json");
+
+            // Fetch countries when region is selected
+            $("#region").change(function () {
+    const regionId = $(this).val();
+    $.post("fetch_data.php", { action: "get_countries", region_id: regionId }, function (response) {
+        $("#country").html('<option value="">Select Country</option>');
+        response.forEach(country => {
+            $("#country").append(`<option value="${country.country_id}">${country.country_name}</option>`);
         });
+    }, "json");
+});
 
-        // Handle Form Submission
-        $("#calculationForm").submit(function(e) {
-            e.preventDefault();
+            // Fetch services on page load
+            $.post("fetch_data.php", { action: "get_services" }, function (response) {
+                response.forEach(service => {
+                    $("#service").append(`<option value="${service.service_id}">${service.service_name}</option>`);
+                });
+            }, "json");
 
-            $.ajax({
-                url: "calculate.php",
-                type: "POST",
-                data: $(this).serialize(),
-                dataType: "json",
-                success: function(response) {
-                    if (response.error) {
-                        alert("Error: " + response.error);
-                    } else {
-                        $("#resultsTable").show(); // Show table when data is available
-                        $("#country_code").text(response.country_code);
-                        $("#daily_usage_value").text(response.daily_usage);
-                        $("#business_days_value").text(response.business_days);
-                        $("#monthly_calls").text(response.monthly_calls);
-                        $("#aht_value").text(response.aht);
-                        $("#call_minutes").text(response.call_minutes);
+            // Fetch call types when service is selected
+            $("#service").change(function () {
+                const serviceId = $(this).val();
+                $.post("fetch_data.php", { action: "get_call_types", service_id: serviceId }, function (response) {
+                    $("#call_type").html('<option value="">Select Call Type</option>');
+                    response.forEach(callType => {
+                        $("#call_type").append(`<option value="${callType.call_type_id}">${callType.call_type_name}</option>`);
+                    });
+                }, "json");
+            });
 
-                        $("#voice_usage").text(response.voice_usage);
-                        $("#DID_rate").text(response.DID_rate);
-                        $("#toll_free_rate").text(response.toll_free_rate);
+            // Handle form submission
+            $("#calculationForm").submit(function (e) {
+                e.preventDefault();
 
-                        $("#cost_voice_usage").text(`$${parseFloat(response.cost_voice_usage).toFixed(4)}`);
-                        $("#cost_did").text(`$${parseFloat(response.cost_did).toFixed(4)}`);
-                        $("#cost_toll_free").text(`$${parseFloat(response.cost_toll_free).toFixed(4)}`);
-                        $("#total_cost").text(`$${parseFloat(response.total_cost).toFixed(4)}`);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    alert("AJAX Error: " + error);
-                }
+                $.post("calculate.php", $(this).serialize(), function (response) {
+                    $("#resultsTable").show();
+
+                    // Populate table with response data
+                    $("#country_name").text(response.country_name);
+                    $("#daily_usage_value").text(response.daily_usage);
+                    $("#business_days_value").text(response.business_days);
+                    $("#monthly_calls").text(response.monthly_calls);
+                    $("#aht_value").text(response.aht);
+                    $("#call_minutes").text(response.call_minutes);
+
+                    $("#cost_voice_usage").text("$" + parseFloat(response.cost_voice_usage).toFixed(4));
+                    $("#cost_did").text("$" + parseFloat(response.cost_did).toFixed(4));
+                    $("#cost_toll_free").text("$" + parseFloat(response.cost_toll_free).toFixed(4));
+                    $("#total_cost").text("$" + parseFloat(response.total_cost).toFixed(4));
+                }, "json");
             });
         });
-    });
-</script>
-
-
+    </script>
 </body>
 </html>
